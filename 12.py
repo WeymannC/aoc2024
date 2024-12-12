@@ -26,7 +26,7 @@ def get_plant(raw, i, j):
     if 0 <= i < max_i and 0 <= j < max_j:
         return raw.split("\n")[i][j]
 
-def get_neighbor(raw, i, j):
+def get_neighbor(i, j):
     return (
         (i + di, j + dj) for di, dj in [(0, 1), (0, -1), (1, 0), (-1, 0)]
     )
@@ -53,21 +53,50 @@ def build_regions(raw):
                         if known_regions[ci][cj] is None:
                             known_regions[ci][cj] = region_index
                             surfaces[region_index] += 1
-                            positions.extend(get_neighbor(raw, ci, cj))
+                            positions.extend(get_neighbor(ci, cj))
                     else:
                         edges[region_index] += 1
                 region_index += 1
 
     return known_regions, surfaces, edges
 
+def get_region(regions, i, j):
+    max_i = len(regions)
+    max_j = len(regions[0])
+    if 0 <= i < max_i and 0 <= j < max_j:
+        return regions[i][j]
+
+def get_corners(i, j):
+    return ([(i+si*di, j+sj*dj) for di, dj in [(1,1),(0,1),(1,0)]] for si,sj in [(1,1),(1,-1),(-1,1),(-1,-1)])
+
+def count_sides(regions):
+    max_i = len(regions)
+    max_j = len(regions[0])
+
+    sides = defaultdict(lambda: 0)
+    for i in range(max_i):
+        for j in range(max_j):
+            current = get_region(regions, i, j)
+            for corner, side1, side2 in get_corners(i,j):
+                if (
+                        (get_region(regions, *side1) != current and get_region(regions, *side2) != current) or
+                        (
+                                get_region(regions, *side1) == get_region(regions, *side2) == current and
+                                get_region(regions, *corner) != current
+                        )
+                ):
+                    sides[current] += 1
+    return sides
 
 def part_1(used_input):
     known_regions, surfaces, edges =  build_regions(used_input)
     return sum(surfaces[k]*v for k, v in edges.items())
 
 def part_2(used_input):
-    pass
+    known_regions, surfaces, edges = build_regions(used_input)
+    sides = count_sides(known_regions)
+    return sum(surfaces[k] * v for k, v in sides.items())
 
 
 print(part_1(data))
-print(part_2(example))
+print(part_2(data))
