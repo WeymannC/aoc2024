@@ -100,40 +100,51 @@ def parse_input(raw):
 
     return A, B, C, program
 
-def part_1(used_input):
-    A, B, C, program = parse_input(used_input)
+def run_program(A, B, C, program):
     instr = 0
     full_output = []
     while instr < len(program):
-        code, operand = program[instr:instr+2]
+        code, operand = program[instr:instr + 2]
 
         A, B, C, instr, output = get_operation(code)(operand, A, B, C, instr)
         if output is not None:
             full_output.append(output)
+    return full_output
+
+
+def part_1(used_input):
+    A, B, C, program = parse_input(used_input)
+    full_output = run_program(A, B, C, program)
 
     return ",".join(str(o) for o in full_output)
 
 
-def part_2(used_input):
+def part_2_brute(used_input):
     _, B, C, program = parse_input(used_input)
 
     full_output = []
     start_A = -1
     while full_output != program:
-        instr = 0
         start_A += 1
-        A = start_A
-        intermediate_output = []
-        while instr < len(program):
-            code, operand = program[instr:instr+2]
-
-            A, B, C, instr, output = get_operation(code)(operand, A, B, C, instr)
-            if output is not None:
-                intermediate_output.append(output)
-
-        full_output = intermediate_output.copy()
+        full_output = run_program(start_A, B, C, program)
 
     return start_A
 
+def find_A(A, B, C, program, index):
+    if index < -len(program):
+        return A
+    for digit in range(8):
+        output = run_program(A*8 + digit, B, C, program)
+        if output[0] == program[index]:
+            a = find_A(A*8 + digit, B, C, program, index-1)
+            if a:
+                return a
+
+def part_2(used_input):
+    _, B, C, program = parse_input(used_input)
+
+    return find_A(0, B, C, program, -1)
+
 print(part_1(data))
-print(part_2(example_2))
+print(part_2_brute(example_2))
+print(part_2(data))
